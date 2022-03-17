@@ -34,13 +34,13 @@ void uav_pose_sub(const geometry_msgs::PoseStamped::ConstPtr& pose){
               UAV_pose_sub.pose.orientation.w,UAV_pose_sub.pose.orientation.x,UAV_pose_sub.pose.orientation.y,UAV_pose_sub.pose.orientation.z;
 }
 
-void subcallback(const class::type) //class and type pub from the object detect
+void subcallback(const geometry_msgs::PoseStamped) //class and type pub from the object detect
 {
     //distance between UAV and the predicted location
-    float dx= pose.position.x - predeicted.x
-    float dy= pose.position.y - predeicted.y
-    float dz= pose.position.z - predeicted.z
-    float dtheta= pose.theta - predeicted.theta
+    float dx= pose.position.x - Aruco_pose_realsense.pose.position.x
+    float dy= pose.position.y - Aruco_pose_realsense.pose.position.y
+    float dz= pose.position.z - Aruco_pose_realsense.pose.position.z
+    //float dtheta= pose.theta - predeicted.theta
 }
 void uav_state_sub(const mavros_msgs::State::ConstPtr& msg){
     current_state = *msg;
