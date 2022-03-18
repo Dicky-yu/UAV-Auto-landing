@@ -1,0 +1,7 @@
+#Number of waypoints
+num_waypoint: 20
+#List of waypoints
+#Each column in the below corresponds to each waypoint. Unit is meter.
+x_pos: [0, 0, 1, 0, -1, 0, 1, 0, -0.5, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0]
+y_pos: [0, 5, 4, 4, 3, 3, 3, 2, 2, 2, 1, 1, 1, 2, 2, 2, 3, 3, 2, 2]
+z_pos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
