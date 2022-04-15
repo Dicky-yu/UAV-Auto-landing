@@ -1,0 +1,106 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <gazebo>
+    <plugin name="differential_drive_controller" filename="libgazebo_ros_diff_drive.so">
+      <legacyMode>false</legacyMode>
+      <alwaysOn>true</alwaysOn>
+      <!-- Topic name on which to publish the linear and angular velocity of the robot -->
+      <commandTopic> cmd_vel </commandTopic>
+      <odometryTopic>$(arg odometryTopic)</odometryTopic>
+      <!-- Set the name of the odometry frame for this robot -->
+      <odometryFrame>$(arg odometryFrame)</odometryFrame>
+      <odometrySource> world </odometrySource>
+      <!-- Set the name of the TF frame for the base (root) link of the robot -->
+      <robotBaseFrame>$(arg robotBaseFrame)</robotBaseFrame>
+      <publishOdomTF>$(arg diff_drive_publishOdomTF)</publishOdomTF>
+      <publishWheelTF> false </publishWheelTF>
+      <publishTf>$(arg diff_drive_publishTf)</publishTf>
+      <publishWheelJointState> true </publishWheelJointState>
+      <!-- Frequency in (Hz) published by the plugin -->
+      <updateRate> 10 </updateRate>
+      <leftJoint> left_wheel_hinge </leftJoint>
+      <rightJoint> right_wheel_hinge </rightJoint>
+      <wheelSeparation> 0.4 </wheelSeparation>
+      <wheelDiameter> 0.2 </wheelDiameter>
+      <wheelAcceleration> 1  </wheelAcceleration>
+      <wheelTorque> 10 </wheelTorque>
+      <rosDebugLevel> na </rosDebugLevel> <!-- <rosDebugLevel>Debug</rosDebugLevel> -->
+    </plugin>
+  </gazebo>
+
+<!-- Ground truth odometry -->
+<!-- This plugin provides ground truth pose information as a nav_msgs/Odometry message -->
+<!-- If that message is fed into a pose_message_to_tf node it is possible to generate ground truth global localization tf data -->
+
+<xacro:if value="$(arg p3d_base_controller_enabled)">
+<gazebo>
+  <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>50.0</updateRate>
+    <bodyName>$(arg robotBaseFrame)</bodyName>
+    <topicName>ground_truth/state</topicName>
+    <gaussianNoise>0.00</gaussianNoise>
+    <frameName>map</frameName> <!-- <frameName>world</frameName> -->
+    <!-- origin is at spawn location -->
+    <xyzOffsets>0 0 0</xyzOffsets>
+    <rpyOffsets>0 0 0</rpyOffsets>
+  </plugin>
+</gazebo>
+</xacro:if>
+
+<!-- hokuyo laser scanner -->
+  <gazebo reference="hokuyo">
+    <sensor type="ray" name="head_hokuyo_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>false</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.10</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+        <noise>
+          <type>gaussian</type>
+          <!-- Noise parameters based on published spec for Hokuyo laser
+               achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+               stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+               reading. -->
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+      <plugin name="gazebo_ros_head_hokuyo_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/udacity_bot/laser/scan</topicName>
+        <frameName>hokuyo</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+<!-- Colors -->
+
+  <!-- chassis -->
+  <gazebo reference="chassis">
+    <material>Gazebo/Gold</material>
+  </gazebo>
+
+  <!-- left_wheel -->
+  <gazebo reference="left_wheel">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <!-- right_wheel -->
+  <gazebo reference="right_wheel">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+</robot>
