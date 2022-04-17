@@ -12,6 +12,7 @@
 
 double uav_pp_x,uav_pp_y,uav_pp_z;
 double uav_pp_qx,uav_pp_qy,uav_pp_qz,uav_pp_qw;
+geometry_msgs::PoseStamped Aruco_pose_realsense;
 
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
