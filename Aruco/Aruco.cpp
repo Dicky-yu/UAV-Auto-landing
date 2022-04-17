@@ -24,6 +24,7 @@
 #include <Eigen/Geometry>
 #include <fstream>
 #include "kinetic_math.hpp"
+#include "movement.h"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -37,9 +38,14 @@ static Vec4 CamParameters;
 cv::Mat cameraMatrix = cv::Mat::eye(3, 3, CV_64F);    //(rows, cols, type)
 cv::Mat distCoeffs = cv::Mat::zeros(8, 1, CV_64F);
 
+geometry_msgs::PoseStamped Arucow_pose;
+static CAMpose caminfo;
+
 double TimerLastT;
 bool Aruco_init = false;
 bool Aruco_found = false;
+
+
 
 void camera_info_cb(const sensor_msgs::CameraInfoPtr& msg){
     fx = msg->K[0];
@@ -62,7 +68,69 @@ void Aruco_PosePub(Vec3 Aruco_xyz, Vec4 Aruco_Q){
     Aruco_pose_realsense.pose.orientation.x = Aruco_Q(1);
     Aruco_pose_realsense.pose.orientation.y = Aruco_Q(2);
     Aruco_pose_realsense.pose.orientation.z = Aruco_Q(3);
+
 }
+
+void camerabody_cb(const geometry_msgs::PoseStamped::ConstPtr)
+{
+    caminfo.x = 0.205;
+    caminfo.y = 0;
+    caminfo.z = 0.07;
+    caminfo.ow = 0;
+    caminfo.ox = 0;
+    caminfo.oy = 0;
+    caminfo.oz = 0;
+}
+
+void Arucow_PosePub(Vec3 world)
+{
+    Arucow_pose.header.stamp = ros::Time::now();
+    Arucow_pose.header.frame_id = "world";
+    Arucow_pose.pose.position.x = world(0);
+    Arucow_pose.pose.position.y = world(1);
+    Arucow_pose.pose.position.z = world(2);
+
+}
+
+void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)                            
+{                                                        
+
+    cout <<"camera to world frame" <<endl;
+
+     double x = Aruco_xyz(0); // camera coordinate x
+     double y = Aruco_xyz(1); // camera coordinate y
+     double z = Aruco_xyz(2); // the distance between center of the object and camera
+
+     Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0.14,-0.02,0,0);
+
+     Eigen::Matrix<double, 4, 4> camera_to_body; //(i,j,k,1) (u,v,w,1)
+     camera_to_body << 0, 0, 1, 0,
+                      -1, 0, 0, 0,
+                       0, -1, 0, 0,
+                       0, 0, 0, 1;
+
+
+     Eigen::Matrix<double, 3, 3> matrix_for_q;
+     Eigen::Quaterniond q2r_matrix(caminfo.ow, caminfo.ox, caminfo.oy, caminfo.oz);
+     matrix_for_q = q2r_matrix.toRotationMatrix();
+
+     Eigen::Matrix<double, 4, 4> body_to_world;
+     body_to_world << matrix_for_q(0,0), matrix_for_q(0,1), matrix_for_q(0,2), caminfo.x,
+                      matrix_for_q(1,0), matrix_for_q(1,1), matrix_for_q(1,2), caminfo.y,
+                      matrix_for_q(2,0), matrix_for_q(2,1), matrix_for_q(2,2), caminfo.z,
+                      0, 0, 0, 1;
+
+
+     world = body_to_world * camera_to_body * camera; //(u,v,w,1) from body coordinate to world coordinate
+//   waypts world_pt = {world(0), world(1), world(2)};
+
+//   return world_pt;      
+
+     Arucow_PosePub(Vec3(world(0), world(1), world(2)));
+
+     cout << "successful" <<endl;
+}
+
 void Aruco_process(Mat image_rgb){
     cv::Mat ArucoOutput = image_rgb.clone();
     std::vector<int> markerIds;
@@ -104,9 +172,18 @@ void Aruco_process(Mat image_rgb){
             Aruco_PosePub(Vec3(tvec(0),tvec(1),tvec(2)),Vec4(Arucoq.w(),Arucoq.x(),Arucoq.y(),Arucoq.z()));
         }
     }
+
+    Eigen::Matrix<double, 3, 1> Aruco_xyz;  // the aruco output
+    Aruco_xyz(0) = tvec(0);
+    Aruco_xyz(1) = tvec(1);
+    Aruco_xyz(2) = tvec(2);
+
+    c2w_process(Aruco_xyz);   // transformation function -> passing opencv output to c2w_process
+
     cv::imshow("Aruco", ArucoOutput);
     cv::waitKey(1);
 }
+
 void camera_rgb_cb(const sensor_msgs::CompressedImageConstPtr &rgb){
     /* Image initialize */
     cv::Mat image_rgb;
@@ -119,6 +196,7 @@ void camera_rgb_cb(const sensor_msgs::CompressedImageConstPtr &rgb){
     }
     Aruco_process(image_rgb);
 }
+
 int main(int argc, char **argv){
     ros::init(argc, argv, "Aruco");
     ros::NodeHandle nh;
@@ -126,10 +204,16 @@ int main(int argc, char **argv){
     ros::Subscriber camera_info_sub = nh.subscribe("/camera/color/camera_info",1,camera_info_cb);
     ros::Subscriber camera_rgb_sub = nh.subscribe<CompressedImage>("/camera/color/image_raw/compressed",1,camera_rgb_cb);
     ros::Publisher ArucoPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucoPose",1);
+    ros::Publisher ArucowPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucowPose",1);
     
+//  ros::Rate rate(20);
     while(ros::ok()){
-        ros::spinOnce();
         ArucoPose_pub.publish(Aruco_pose_realsense);
+        ArucowPose_pub.publish(Arucow_pose);
+        ros::spinOnce();
     }
     return 0;
 }
+
+
+//spinOnce -> camera_rgb_cb -> aruco_process -> transformation process -> Aruco_PosePub: datatype from vec3 to geometry_msgs::PoseStamped -> then back to main while loop -> publisher
