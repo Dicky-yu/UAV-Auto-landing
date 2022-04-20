@@ -10,6 +10,7 @@
 #include <fcntl.h>
 #include <math.h>
 #include "std_msgs/String.h"
+#include "std_msgs/Bool.h"
 #include "utils/yamlRead.h"
 #include "utils/eigen_typedef.h"
 #include "movement/generalmove.h"
@@ -29,12 +30,14 @@ enum Mission_STATE {
     HOVER,
     LANDING,
     END,
+    APPROACH,
 } mission_state=IDLE;
 
 mavros_msgs::State current_state;
 double uav_lp_x,uav_lp_y,uav_lp_z;
 double uav_lp_qx,uav_lp_qy,uav_lp_qz,uav_lp_qw;
 double uavposition_x,uavposition_y,uavposition_z;
+double arucoposition_x,arucoposition_y,arucoposition_z;
 
 double height,length,speed;
 bool   force_start;
@@ -53,14 +56,16 @@ void uav_lp_cb(const geometry_msgs::PoseStamped::ConstPtr& pose){
     uav_lp_qw = pose->pose.orientation.w;
 }
 
-void predicted_cb(const geometry_msgs::PoseStamped::ConstPtr& pose){
-    uav_lp_x = pose->pose.position.x;
-    uav_lp_y = pose->pose.position.y;
-    uav_lp_z = pose->pose.position.z;
-    uav_lp_qx = pose->pose.orientation.x;
-    uav_lp_qy = pose->pose.orientation.y;
-    uav_lp_qz = pose->pose.orientation.z;
-    uav_lp_qw = pose->pose.orientation.w;
+static bool foundornot;
+void found_cb(const std_msgs::Bool::ConstPtr& msg){
+    foundornot = msg->data;
+}
+
+geometry_msgs::PoseStamped Aruco_pose_realsense;
+void aruco_cb(const  geometry_msgs::PoseStamped){
+    arucoposition_x = Aruco_pose_realsense.pose.position.x;
+    arucoposition_y = Aruco_pose_realsense.pose.position.y;
+    arucoposition_z = Aruco_pose_realsense.pose.position.z;
 }
 
 int main(int argc, char **argv)
@@ -82,9 +87,10 @@ int main(int argc, char **argv)
             ("/mavros/state", 10, state_cb);
     ros::Subscriber uavposlp_sub = nh.subscribe<geometry_msgs::PoseStamped>
             ("/mavros/local_position/pose", 10, uav_lp_cb);
-    //sub to KF predicted position
-    ros::Subscriber predicted_sub = nh.subscribe<geometry_msgs::PoseStamped>
-            ("/ArucoPose", 1, predicted_cb);
+    ros::Subscriber found_sub = nh.subscribe<std_msgs::Bool>
+            ("/obj_found", 10, found_cb);
+    ros::Subscriber arucopos_sub = nh.subscribe<geometry_msgs::PoseStamped>
+            ("/ArucoPose", 1, aruco_cb);
 
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>
             ("/mavros/setpoint_position/local", 10);
@@ -235,18 +241,37 @@ int main(int argc, char **argv)
 
         if(mission_state==HOVER)
         {
-            if(Aruco_pose_realsense.pose.position > 0)//if scran aruco
+            if(foundornot == true)
             {
-                pose.pose.position.x=Aruco_pose_realsense.pose.position.x;
-                pose.pose.position.y=Aruco_pose_realsense.pose.position.y;
-                if(uavposition_x-Aruco_pose_realsense.pose.position.x < 1 && uavposition_y-Aruco_pose_realsense.pose.position.y <1)
-                    {
-                        mission_state = LANDING;
-                        cout << "Hover finished" << endl;
-                        last_request = ros::Time::now();
-                    }
-
+                mission_state = APPROACH;
+                cout << "Hover finished" << endl;
+                last_request = ros::Time::now();
             }
+        }
+
+        if(mission_state==APPROACH)
+        {
+            if(arucoposition_x > 5)
+            {
+                static generalMove straight_path(ros::Time::now().toSec(),
+                                                    0.0, 0.0, height,0.0,
+                                                    arucoposition_x,0.0, height-0.5,0.0,
+                                                    (arucoposition_x/speed));
+                straight_path.getPose(ros::Time::now().toSec(),pose);
+           }
+            if(0.5 < arucoposition_x < 5)
+            {
+                static generalMove straight_path(ros::Time::now().toSec(),
+                                                    uavposition_x, uavposition_y, uavposition_z,0.0,
+                                                    0.5,0.0,0.5,0.0,  //camera position
+                                                    speed);
+                straight_path.getPose(ros::Time::now().toSec(),pose);
+                mission_state = LANDING;
+                cout << "Approach finished" << endl;
+                last_request = ros::Time::now();
+            }
+
+
         }
 
         //PLEASE DEFINE THE LANDING PARAMETER HERE
