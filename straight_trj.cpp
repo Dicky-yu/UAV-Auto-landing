@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 
         if(mission_state==APPROACH)
         {
-            if(arucoposition_x > 5)
+            if(arucoposition_z > 1)
             {
                 static generalMove straight_path(ros::Time::now().toSec(),
                                                     0.0, 0.0, height,0.0,
@@ -259,13 +259,16 @@ int main(int argc, char **argv)
                                                     (arucoposition_x/speed));
                 straight_path.getPose(ros::Time::now().toSec(),pose);
            }
-            if(0.5 < arucoposition_x < 5)
+            if(0.1 < arucoposition_z < 1)
             {
                 static generalMove straight_path(ros::Time::now().toSec(),
                                                     uavposition_x, uavposition_y, uavposition_z,0.0,
-                                                    0.5,0.0,0.5,0.0,  //camera position
+                                                    0.1,0.0,uavposition_z - 0.1,0.0,  //camera position
                                                     speed);
                 straight_path.getPose(ros::Time::now().toSec(),pose);
+            }
+            if(arucoposition_z = 0.1)
+            {
                 mission_state = LANDING;
                 cout << "Approach finished" << endl;
                 last_request = ros::Time::now();
