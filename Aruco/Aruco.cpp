@@ -23,6 +23,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include <fstream>
+#include <gazebo_msgs/ModelState.h>
 #include "kinetic_math.hpp"
 #include "movement.h"
 
@@ -39,12 +40,11 @@ cv::Mat cameraMatrix = cv::Mat::eye(3, 3, CV_64F);    //(rows, cols, type)
 cv::Mat distCoeffs = cv::Mat::zeros(8, 1, CV_64F);
 
 geometry_msgs::PoseStamped Arucow_pose;
-static CAMpose caminfo;
+static UGVpose ugvinfo;
 
 double TimerLastT;
 bool Aruco_init = false;
 bool Aruco_found = false;
-
 
 
 void camera_info_cb(const sensor_msgs::CameraInfoPtr& msg){
@@ -63,23 +63,23 @@ void Aruco_PosePub(Vec3 Aruco_xyz, Vec4 Aruco_Q){
     Aruco_pose_realsense.header.frame_id = "map";
     Aruco_pose_realsense.pose.position.x = Aruco_xyz(0);
     Aruco_pose_realsense.pose.position.y = Aruco_xyz(1);
-    Aruco_pose_realsense.pose.position.z = Aruco_xyz(2);
+    Aruco_pose_realsense.pose.position.z = (Aruco_xyz(2))*2;
     Aruco_pose_realsense.pose.orientation.w = Aruco_Q(0);
     Aruco_pose_realsense.pose.orientation.x = Aruco_Q(1);
     Aruco_pose_realsense.pose.orientation.y = Aruco_Q(2);
     Aruco_pose_realsense.pose.orientation.z = Aruco_Q(3);
-
+    
 }
 
-void camerabody_cb(const geometry_msgs::PoseStamped::ConstPtr)
+void ugvbody_cb(const gazebo_msgs::ModelState::ConstPtr& pose)
 {
-    caminfo.x = 0.205;
-    caminfo.y = 0;
-    caminfo.z = 0.07;
-    caminfo.ow = 0;
-    caminfo.ox = 0;
-    caminfo.oy = 0;
-    caminfo.oz = 0;
+    ugvinfo.x = pose->pose.position.x;
+    ugvinfo.y = pose->pose.position.y;
+    ugvinfo.z = pose->pose.position.z;
+    ugvinfo.ow = pose->pose.orientation.w;
+    ugvinfo.ox = pose->pose.orientation.x;
+    ugvinfo.oy = pose->pose.orientation.y;
+    ugvinfo.oz = pose->pose.orientation.z;
 }
 
 void Arucow_PosePub(Vec3 world)
@@ -92,36 +92,38 @@ void Arucow_PosePub(Vec3 world)
 
 }
 
-void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)                            
+void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  
 {                                                        
-
     cout <<"camera to world frame" <<endl;
 
-     double x = Aruco_xyz(0); // camera coordinate x
-     double y = Aruco_xyz(1); // camera coordinate y
-     double z = Aruco_xyz(2); // the distance between center of the object and camera
+     double x = Aruco_xyz(0);      // camera coordinate x
+     double y = Aruco_xyz(1);      // camera coordinate y
+     double z = (Aruco_xyz(2))*2;  // the distance between center of the object and camera
 
-     Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0.14,-0.02,0,0);
+     Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0, -0.17,3.14,0);
 
-     Eigen::Matrix<double, 4, 4> camera_to_body; //(i,j,k,1) (u,v,w,1)
-     camera_to_body << 0, 0, 1, 0,
-                      -1, 0, 0, 0,
-                       0, -1, 0, 0,
+     Eigen::Matrix<double, 4, 4> camera_to_body;  //(i,j,k,1)
+     camera_to_body << 0, -0.173648, -0.984808, 0.16,
+                       1, 0, 0, 0,
+                       0, -0.984808, 0.173648, 0.078,
                        0, 0, 0, 1;
 
+     // Vec4 offset(0.13, 0.2, 0, 0);
 
      Eigen::Matrix<double, 3, 3> matrix_for_q;
-     Eigen::Quaterniond q2r_matrix(caminfo.ow, caminfo.ox, caminfo.oy, caminfo.oz);
+     Eigen::Quaterniond q2r_matrix(ugvinfo.ow, ugvinfo.ox, ugvinfo.oy, ugvinfo.oz);
      matrix_for_q = q2r_matrix.toRotationMatrix();
 
      Eigen::Matrix<double, 4, 4> body_to_world;
-     body_to_world << matrix_for_q(0,0), matrix_for_q(0,1), matrix_for_q(0,2), caminfo.x,
-                      matrix_for_q(1,0), matrix_for_q(1,1), matrix_for_q(1,2), caminfo.y,
-                      matrix_for_q(2,0), matrix_for_q(2,1), matrix_for_q(2,2), caminfo.z,
+     body_to_world << matrix_for_q(0,0), matrix_for_q(0,1), matrix_for_q(0,2), 1.5,
+                      matrix_for_q(1,0), matrix_for_q(1,1), matrix_for_q(1,2), 0,
+                      matrix_for_q(2,0), matrix_for_q(2,1), matrix_for_q(2,2), 0.12,
                       0, 0, 0, 1;
 
+     cout<<body_to_world<<endl;
 
-     world = body_to_world * camera_to_body * camera; //(u,v,w,1) from body coordinate to world coordinate
+
+     world = body_to_world * camera_to_body * camera;  //(u,v,w,1) from body coordinate to world coordinate
 //   waypts world_pt = {world(0), world(1), world(2)};
 
 //   return world_pt;      
@@ -206,11 +208,11 @@ int main(int argc, char **argv){
     ros::Publisher ArucoPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucoPose",1);
     ros::Publisher ArucowPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucowPose",1);
     
-//  ros::Rate rate(20);
+//    ros::Rate rate(30);
     while(ros::ok()){
         ArucoPose_pub.publish(Aruco_pose_realsense);
         ArucowPose_pub.publish(Arucow_pose);
-        ros::spinOnce();
+        ros::spinOnce(); // when you spinOnce, ROS will call all the callback function: subscriber=>camera_info_cb && camera_rgb_cb
     }
     return 0;
 }
