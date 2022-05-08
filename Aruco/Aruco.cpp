@@ -88,10 +88,10 @@ void ugvbody_cb(const gazebo_msgs::ModelStates::ConstPtr& msg)// in simulation, 
 void Arucow_PosePub(Vec3 world)
 {
     Arucow_pose.header.stamp = ros::Time::now();
-    Arucow_pose.header.frame_id = "world";
+    Arucow_pose.header.frame_id = "world frame";
     Arucow_pose.pose.position.x = world(0);
     Arucow_pose.pose.position.y = world(1);
-    Arucow_pose.pose.position.z = world(2);   // +0.16
+    Arucow_pose.pose.position.z = (world(2)+0.18);   // +0.16
 
 }
 
@@ -109,9 +109,9 @@ void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  //here, the function ge
      Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0, -0.17,3.14,0);
 
      Eigen::Matrix<double, 4, 4> camera_to_body;  //(i,j,k,1)
-     camera_to_body << 0, -0.173648, -0.984808, 0.16,
+     camera_to_body << 0, -0.2756374, -0.9612617, 0.16,        // 16 degrees
                        1, 0, 0, 0,
-                       0, -0.984808, 0.173648, 0.078,
+                       0, -0.9612617, 0.2756374, 0.078,
                        0, 0, 0, 1;
 
 
@@ -152,7 +152,7 @@ void Aruco_process(Mat image_rgb){
     cv::Vec3d rvec, tvec;
     rvecs.clear();tvecs.clear();
     cv::Ptr<cv::aruco::DetectorParameters> parameters = cv::aruco::DetectorParameters::create();
-    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_6X6_250);
+    cv::Ptr<cv::aruco::Dictionary> dictionary = cv::aruco::getPredefinedDictionary(cv::aruco::DICT_7X7_250);
     cv::aruco::detectMarkers(image_rgb, dictionary, markerCorners, markerIds, parameters, rejectedCandidates);
     if (markerIds.size() > 0){
         markerConerABCDs.clear();
@@ -213,13 +213,13 @@ int main(int argc, char **argv){
     ros::NodeHandle nh;
 //  ros::Subscriber camera_info_sub = nh.subscribe("/camera/aligned_depth_to_color/camera_info",1,camera_info_cb);
     ros::Subscriber camera_info_sub = nh.subscribe("/camera/color/camera_info",1,camera_info_cb);
-    ros::Subscriber camera_rgb_sub = nh.subscribe<CompressedImage>("/camera/color/image_raw/compressed",1,camera_rgb_cb);
-    ros::Subscriber ugvbody_sub = nh.subscribe<gazebo_msgs::ModelStates>("/gazebo/model_states",10, ugvbody_cb);
+    ros::Subscriber camera_rgb_sub = nh.subscribe<CompressedImage>("/camera/color/image_raw/compressed",10,camera_rgb_cb);
+    ros::Subscriber ugvbody_sub = nh.subscribe<gazebo_msgs::ModelStates>("/gazebo/model_states",100, ugvbody_cb);
     ros::Publisher ArucoPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucoPose",1);
     ros::Publisher ArucowPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucowPose",1);
     ros::Publisher arucofound_pub = nh.advertise<std_msgs::Bool>("/aruco_found",1);
     
-//  ros::Rate rate(30);
+//  ros::Rate rate(20);
     while(ros::ok()){
         ArucoPose_pub.publish(Aruco_pose_realsense);
         ArucowPose_pub.publish(Arucow_pose);
