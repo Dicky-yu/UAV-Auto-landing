@@ -11,7 +11,7 @@
     <!-- vehicle model and world -->
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
-    <arg name="my_vehicle" default="iris_aruco_vertical"/>
+    <arg name="my_vehicle" default="iris_aruco_plate"/>
     <arg name="world" default="$(find e2es)/gazebo/worlds/empty.world"/>
     <arg name="sdf" default="$(find e2es)/gazebo/models/$(arg my_vehicle)/$(arg my_vehicle).sdf"/>
 
