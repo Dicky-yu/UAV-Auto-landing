@@ -101,7 +101,7 @@ void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)
      double y = Aruco_xyz(1); // camera coordinate y
      double z = (Aruco_xyz(2)*2); // the distance between center of the object and camera
 
-     Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0, -0.17,3.14,0);
+     Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world;
 
      Eigen::Matrix<double, 4, 4> camera_to_body;  //(i,j,k,1)
      camera_to_body << 0, -0.3420202, -0.9396926, 0.16,        // 20 degrees
