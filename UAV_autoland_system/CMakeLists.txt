@@ -49,7 +49,23 @@ ${Sophus_LIBRARIES}
 )
 
 ######################################################################
+add_executable(uav_trj_1
+    src/uav_trj_method1.cpp
+    )
+target_link_libraries(uav_trj_1
+    ${catkin_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
+    ${Sophus_LIBRARIES}
+    )
 
+add_executable(uav_trj_2
+    src/uav_trj_method2.cpp
+    )
+target_link_libraries(uav_trj_2
+    ${catkin_LIBRARIES}
+    ${YAML_CPP_LIBRARIES}
+    ${Sophus_LIBRARIES}
+    )
 ####################################################################
 add_executable(record
     src/record.cpp
@@ -60,10 +76,3 @@ target_link_libraries(record
     ${Sophus_LIBRARIES}
     )
 
-
-#add_executable( src/.cpp)
-#target_link_libraries(Aruco
-#${OpenCV_LIBRARIES}
-#${catkin_LIBRARIES}
-#${Sophus_LIBRARIES}
-#)
