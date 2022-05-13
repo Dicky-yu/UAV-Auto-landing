@@ -109,9 +109,9 @@ void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  //here, the function ge
      Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0, -0.17,3.14,0);
 
      Eigen::Matrix<double, 4, 4> camera_to_body;  //(i,j,k,1)
-     camera_to_body << 0, -0.3090170, -0.9510565, 0.16,        // 18 degrees
+     camera_to_body << 0, -0.3420202, -0.9396926, 0.16,        // 18 degrees
                        1, 0, 0, 0,
-                       0, -0.9510565, 0.3090170, 0.078,
+                       0, -0.9396926, 0.3420202, 0.078,
                        0, 0, 0, 1;
 
 
