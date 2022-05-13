@@ -1,0 +1,13 @@
+material ArucoVisualMarker7/Marker
+{
+	technique
+	{
+		pass
+		{
+			texture_unit
+			{
+				texture 7x7_1000-165.png
+			}
+		}
+	}
+}
