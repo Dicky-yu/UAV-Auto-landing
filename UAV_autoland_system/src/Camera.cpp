@@ -70,15 +70,13 @@ void Aruco_PosePub(Vec3 Aruco_xyz, Vec4 Aruco_Q){
     Aruco_pose_realsense.pose.orientation.x = Aruco_Q(1);
     Aruco_pose_realsense.pose.orientation.y = Aruco_Q(2);
     Aruco_pose_realsense.pose.orientation.z = Aruco_Q(3);
-    //thie is a different Aruco_xyz, this Aruco_xyz is the "passed variable" from other place
 }
 
-void ugvbody_cb(const gazebo_msgs::ModelStates::ConstPtr& msg)// in simulation, if your camera does not have a published that
-                                                          // tells u where the camera it, you could just manually input these values (via the defined sdf files)
+void ugvbody_cb(const gazebo_msgs::ModelStates::ConstPtr& msg)                                                        
 {
-    ugvinfo_x = msg->pose[2].position.x;      // 1.0
-    ugvinfo_y = msg->pose[2].position.y;      // 0
-    ugvinfo_z = msg->pose[2].position.z;      // 0.12
+    ugvinfo_x = msg->pose[2].position.x;
+    ugvinfo_y = msg->pose[2].position.y;
+    ugvinfo_z = msg->pose[2].position.z;
     ugvinfo_ow = msg->pose[2].orientation.w;
     ugvinfo_ox = msg->pose[2].orientation.x;
     ugvinfo_oy = msg->pose[2].orientation.y;
@@ -95,11 +93,8 @@ void Arucow_PosePub(Vec3 world)
 
 }
 
-void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  //here, the function get a variable call Aruco_xyz
-                                                         //but it is just a name, there is no value, it is just a "shell"
-
-                                                         //as I mentioned, when u are only using camera, dun need body frame
-{                                                        // just express the tranformation directly from camera to world
+void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  
+{                                                       
     cout <<"camera to world frame" <<endl;
 
      double x = Aruco_xyz(0); // camera coordinate x
@@ -109,7 +104,7 @@ void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  //here, the function ge
      Eigen::Matrix<double, 4, 1> camera (x,y,z,1), body, world, offset (0, -0.17,3.14,0);
 
      Eigen::Matrix<double, 4, 4> camera_to_body;  //(i,j,k,1)
-     camera_to_body << 0, -0.3420202, -0.9396926, 0.16,        // 18 degrees
+     camera_to_body << 0, -0.3420202, -0.9396926, 0.16,        // 20 degrees
                        1, 0, 0, 0,
                        0, -0.9396926, 0.3420202, 0.078,
                        0, 0, 0, 1;
@@ -129,11 +124,7 @@ void c2w_process(Eigen::Matrix<double, 3, 1> Aruco_xyz)  //here, the function ge
 
 //   body_coord = matrix_camera_to_body * camera_coord + offset; //(i,j,k,1) from camera coordinate to body coordinate
 
-     world = body_to_world * camera_to_body * camera;  //(u,v,w,1) from body coordinate to world coordinate
-//   waypts world_pt = {world(0), world(1), world(2)};
-
-//   return world_pt;      // actually you could define this function as "void", no need to return, cos the final "arucow_pose" is a global variable
-
+     world = body_to_world * camera_to_body * camera;
      Arucow_PosePub(Vec3(world(0), world(1), world(2)));
 
      cout << "processing" <<endl;
@@ -186,9 +177,6 @@ void Aruco_process(Mat image_rgb){
     Aruco_xyz(1) = tvec(1);
     Aruco_xyz(2) = tvec(2);
 
-    //when u initiate a variable in a function, it is only "local", other function will not know
-    //so even u have the same name of a variable somewhere else, there are all different
-    //thie aruco_xyz is only for "here"
     c2w_process(Aruco_xyz);   // transformation function -> passing opencv output to c2w_process
 
     cv::imshow("Aruco", ArucoOutput);
@@ -219,7 +207,6 @@ int main(int argc, char **argv){
     ros::Publisher ArucowPose_pub = nh.advertise<geometry_msgs::PoseStamped>("/ArucowPose",1);
     ros::Publisher arucofound_pub = nh.advertise<std_msgs::Bool>("/aruco_found",1);
     
-//  ros::Rate rate(20);
     while(ros::ok()){
         ArucoPose_pub.publish(Aruco_pose_realsense);
         ArucowPose_pub.publish(Arucow_pose);
@@ -231,10 +218,9 @@ int main(int argc, char **argv){
           aruco_found.data = false;
         arucofound_pub.publish(aruco_found);
 
-        ros::spinOnce();// when you spinOnce, ROS will call all the callback function: subscriber=>camera_info_cb && camera_rgb_cb
+        ros::spinOnce(); // ROS will call all the callback function: subscriber=>camera_info_cb && camera_rgb_cb
     }
     return 0;
 }
-
 
 //spinOnce -> camera_rgb_cb -> aruco_process -> transformation process -> Aruco_PosePub: datatype from vec3 to geometry_msgs::PoseStamped -> then back to main while loop -> publisher
