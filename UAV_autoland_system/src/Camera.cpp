@@ -91,7 +91,7 @@ void Arucow_PosePub(Vec3 world)
     Arucow_pose.header.frame_id = "world frame";
     Arucow_pose.pose.position.x = (world(0)+0.1);
     Arucow_pose.pose.position.y = world(1);
-    Arucow_pose.pose.position.z = (world(2)+0.16);   // +0.16
+    Arucow_pose.pose.position.z = world(2);
 
 }
 
