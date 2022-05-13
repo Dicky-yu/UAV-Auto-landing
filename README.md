@@ -16,6 +16,6 @@ This project aims to develop a simple, low-cost, and advanced autonomous landing
 
    source devel/setup.bash
 
-3. Run our world
+3. Launch our world
 
    ./sim.sh
