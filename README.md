@@ -22,10 +22,14 @@ This project aims to develop a simple, low-cost, and advanced autonomous landing
 
    ./sim.sh
    
-4. Launch
+4. Launch aruco detection module
 
    cd ~/UAV_autoland_system
    
    source devel/setup.bash
    
    rosrun fyp Aruco
+   
+5. Launch uav control module
+   
+   rosrun fyp uav_trj_method1 / rosrun fyp uav_trj_method2
