@@ -343,7 +343,7 @@ int main(int argc, char **argv)
                   }
               }
               else {
-                 if(scanornot == false)
+                 if(ros::Time::now()-last_request > ros::Duration(6.0));
                  {
                      mission_state=RECOVERY;
                      cout << "too low" << endl;
