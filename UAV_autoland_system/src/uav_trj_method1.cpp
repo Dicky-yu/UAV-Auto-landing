@@ -342,8 +342,9 @@ int main(int argc, char **argv)
                       cout << arucocp_z << endl;
                       cout << arucowp_z << endl;
                   }
-
-                  if(arucowp_z <0.21)
+              }
+              else{
+                  if(ros::Time::now()-last_request > ros::Duration(6.0))
                   {
                     mission_state=RECOVERY;
                     cout << "too low" << endl;
