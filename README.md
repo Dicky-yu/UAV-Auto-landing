@@ -18,7 +18,7 @@ This project aims to develop a simple, low-cost, and advanced autonomous landing
 
    catkin_make
    ```
-3. Launch our world
+3. Launch our Gazebo world
    ```
    ./sim.sh
    ```
