@@ -33,3 +33,7 @@ This project aims to develop a simple, low-cost, and advanced autonomous landing
 5. Launch uav control module
    
    rosrun fyp uav_trj_method1 / rosrun fyp uav_trj_method2
+   
+6. Run generic keyboard teleop for moving robot (UGV)
+   
+   rosrun teleop_twist_keyboard teleop_twist_keyboard.py
