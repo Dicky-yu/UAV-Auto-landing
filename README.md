@@ -2,7 +2,7 @@
 
 ## Antonomous Landing of UAV on Mobile Platform
 
-This project aims to develop a simple, low-cost, and advanced autonomous landing system for the UAV without relying on GNSS and onboard sensors. An ArUco marker, which is a simple, low-cost fiducial marker, is used for visual-based object detection. Moreover, compared to the studies which have already been proposed, the stereo camera which works as the sensor in our study is installed on the mobile platform instead of the UAV. This alleviates the burden of UAV during the landing process. Our novel vision-based position estimation method is integrated with a path planning algorithm to generate trajectory and perform autonomous landing.
+This project aims to develop a simple, low-cost, and advanced autonomous landing system for the UAV without relying on GNSS and onboard sensors. An ArUco marker, which is a simple, low-cost fiducial marker, is used for visual-based object detection. Moreover, compared to the studies which have already been proposed, the stereo camera which works as the sensor in our study is installed on the mobile platform instead of the UAV. This alleviates the burden of UAV during the landing process. Our novel vision-based position estimation method is integrated with a path planning algorithm to generate trajectory and perform autonomous landing of UAV.
 
 
 ### Clone the work
